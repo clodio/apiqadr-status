@@ -34,7 +34,7 @@
                 <th>parsing_attempts</th>
                 <th>analysis_attempts</th>
                 <th>total_addresses</th>
-                <th>download</th>
+                <th>result</th>
             </tr>
         </thead>
         <tfoot>
@@ -47,7 +47,7 @@
                 <th>parsing_attempts</th>
                 <th>analysis_attempts</th>
                 <th>total_addresses</th>
-                <th>download</th>
+                <th>result</th>
             </tr>
         </tfoot>
     </table>
@@ -115,16 +115,8 @@
                     [2, "desc"]
                 ],
                 "columns": [{
-                        data: "batch_analysis_id",
-                        "render": function (data, type, row, meta) {
-                            if (type === 'display') {
-                                data =
-                                    '<a href="' + serviceDNS + '/address/v1/batch_analysis/' +
-                                    data + '/original_file">' + data + '</a>';
-                            }
+                        data: "batch_analysis_id"
 
-                            return data;
-                        }
                     },
                     {
                         data: "created_at"
@@ -136,7 +128,15 @@
                         data: "email_to"
                     },
                     {
-                        data: "input_filename"
+                        data: "input_filename",
+                        "render": function (data, type, row, meta) {
+                            if (type === 'display') {
+                                data =
+                                    '<a href="' + serviceDNS + '/address/v1/batch_analysis/' +
+                                    row.batch_analysis_id + '/original_file">' + data + '</a>';
+                            }
+                            return data;
+                        }
                     },
                     {
                         data: "parsing_attempts"
@@ -153,7 +153,7 @@
                                 data =
                                     '<a class="btn btn-primary" role="button" href="' +
                                     serviceDNS + '/address/v1/batch_analysis/' +
-                                    data + '">' + 'Télécharger</a>';
+                                    data + '">' + 'Download</a>';
                             }
 
                             return data;
