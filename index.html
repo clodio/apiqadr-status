@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>DataTables example - JSONP data source for remote domains</title>
+    <link rel="shortcut icon" type="image/png" href="https://datatables.net/media/images/favicon.png">
+    <link rel="stylesheet" type="text/css" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-beta/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.min.css">
+
+    <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-1.12.4.js">
+    </script>
+
+    <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js"></script>
+    <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.0/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/buttons/1.5.0/js/buttons.html5.min.js"></script>
+    <script type="text/javascript" language="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+
+
+</head>
+
+<body class="wide comments example">
+
+    <table id="example" class="table table-striped table-bordered" cellspacing="0" width="100%">
+        <thead>
+            <tr>
+                <th>batch_analysis_id</th>
+                <th>created_at</th>
+                <th>finished_at</th>
+                <th>email_to</th>
+                <th>input_filename</th>
+                <th>parsing_attempts</th>
+                <th>analysis_attempts</th>
+                <th>total_addresses</th>
+                <th>download</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <th>batch_analysis_id</th>
+                <th>created_at</th>
+                <th>finished_at</th>
+                <th>email_to</th>
+                <th>input_filename</th>
+                <th>parsing_attempts</th>
+                <th>analysis_attempts</th>
+                <th>total_addresses</th>
+                <th>download</th>
+            </tr>
+        </tfoot>
+    </table>
+    <script type="text/javascript" class="init">
+        $(document).ready(function () {
+            //
+
+            var serviceDNS = ""; // ex : https://nom_de_domaine
+            var serviceURL = ""; // ex : /service
+
+            var getUrlParameter = function getUrlParameter(sParam) {
+                var parameterValue = "";
+                var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+                    sURLVariables = sPageURL.split('&'),
+                    sParameterName,
+                    i;
+
+                for (i = 0; i < sURLVariables.length; i++) {
+                    sParameterName = sURLVariables[i].split('=');
+
+                    if (sParameterName[0] === sParam) {
+                        parameterValue = sParameterName[1]
+                    }
+                }
+                return parameterValue;
+            };
+
+            var getParameterFromURLOrLocalStorage = function getParameterFromURLOrLocalStorage(parameterName) {
+                var parameterValue = "";
+                if (getUrlParameter(parameterName)) {
+                    parameterValue = getUrlParameter(parameterName);
+                    if (typeof (Storage) !== "undefined") {
+                        localStorage.setItem(parameterName, parameterValue);
+                    }
+                }
+                if (typeof (Storage) !== "undefined") {
+                    parameterValue = localStorage.getItem(parameterName);
+                }
+                return parameterValue;
+            };
+
+            serviceDNS = getParameterFromURLOrLocalStorage("serviceDNS");
+            serviceURL = getParameterFromURLOrLocalStorage("serviceURL");
+
+
+            $('#example').DataTable({
+                "ajax": {
+                    "url": serviceDNS + serviceURL,
+                    "dataSrc": ""
+                },
+                "pageLength": 100,
+                "lengthMenu": [
+                    [10, 25, 50, 100, 200, -1],
+                    [10, 25, 50, 100, 200, "All"]
+                ],
+                "dom": 'Blfrtip',
+                "buttons": [
+                    'copyHtml5',
+                    'excelHtml5', {
+                        extend: 'csvHtml5',
+                        fieldSeparator: ";"
+                    }
+                ],
+                "order": [
+                    [2, "desc"]
+                ],
+                "columns": [{
+                        data: "batch_analysis_id",
+                        "render": function (data, type, row, meta) {
+                            if (type === 'display') {
+                                data =
+                                    '<a href="' + serviceDNS + '/address/v1/batch_analysis/' +
+                                    data + '/original_file">' + data + '</a>';
+                            }
+
+                            return data;
+                        }
+                    },
+                    {
+                        data: "created_at"
+                    },
+                    {
+                        data: "finished_at"
+                    },
+                    {
+                        data: "email_to"
+                    },
+                    {
+                        data: "input_filename"
+                    },
+                    {
+                        data: "parsing_attempts"
+                    },
+                    {
+                        data: "analysis_attempts"
+                    },
+                    {
+                        data: "total_addresses"
+                    }, {
+                        data: "batch_analysis_id",
+                        "render": function (data, type, row, meta) {
+                            if (type === 'display' && row.finished_at !== "") {
+                                data =
+                                    '<a class="btn btn-primary" role="button" href="' +
+                                    serviceDNS + '/address/v1/batch_analysis/' +
+                                    data + '">' + 'Télécharger</a>';
+                            }
+
+                            return data;
+                        }
+                    }
+                ],
+                "footerCallback": function (row, data, start, end, display) {
+                    var api = this.api(),
+                        data;
+
+                    // Remove the formatting to get integer data for summation
+                    var intVal = function (i) {
+                        return typeof i === 'string' ?
+                            i.replace(/[\$,]/g, '') * 1 :
+                            typeof i === 'number' ?
+                            i : 0;
+                    };
+
+                    // Total over all pages
+                    total = api
+                        .column(7)
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Total over this page
+                    pageTotal = api
+                        .column(7, {
+                            page: 'current'
+                        })
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column(7).footer()).html(
+                        'page:' + pageTotal + ', total:' + total + ''
+                    );
+                }
+            });
+        });
+    </script>
+
+
+</body>
+
+</html>
